@@ -13,12 +13,11 @@ namespace Data
     {
     }
 
-    final class ConsListImpossibleException extends \Exception
-    {
-    }
-
     final class ConsListPrx
     {
+        final private function __construct()
+        {
+        }
     }
 
     final class ConsList<Tp as ConsListPrx, +Tt> implements IMonad<Tp, Tt>
@@ -45,14 +44,8 @@ namespace Data
 
         final public static function fromFunctor(IFunctor<Tp, Tt> $x): ConsList<Tp, Tt>
         {
-            if ($x instanceof ConsList)
-            {
-                return $x;
-            }
-            else
-            {
-                throw new ConsListImpossibleException();
-            }
+            invariant($x instanceof ConsList, 'unique proxy type');
+            return $x;
         }
 
         final public function fmap<Tv>((function (Tt): Tv) $f): ConsList<Tp, Tv>
@@ -62,14 +55,8 @@ namespace Data
 
         final public static function fromMonad(IMonad<Tp, Tt> $x): ConsList<Tp, Tt>
         {
-            if ($x instanceof ConsList)
-            {
-                return $x;
-            }
-            else
-            {
-                throw new ConsListImpossibleException();
-            }
+            invariant($x instanceof ConsList, 'unique proxy type');
+            return $x;
         }
 
         final public static function pure(Tt $x): ConsList<Tp, Tt>
@@ -129,8 +116,8 @@ namespace Data
 
             while (! $lst->isEmpty())
             {
-                $acc = $comp($lst->unsafeHead(), $acc);
-                $lst = $lst->unsafeTail();
+                $acc = $comp($lst->unsafeFirst(), $acc);
+                $lst = $lst->unsafeRest();
             }
 
             return $acc;
@@ -155,23 +142,23 @@ namespace Data
         }
 
         <<__Memoize>>
-        final public function head(): Optional<Tt>
+        final public function first(): Optional<Tt>
         {
             return $this->xs->fmap($x ==> $x->first());
         }
 
         <<__Memoize>>
-        final public function tail(): Optional<ConsList<Tp, Tt>>
+        final public function rest(): Optional<ConsList<Tp, Tt>>
         {
             return $this->xs->fmap($x ==> $x->second());
         }
 
-        final private function unsafeHead(): Tt
+        final private function unsafeFirst(): Tt
         {
             return $this->match(() ==> { throw new ConsListEmptyException(); }, ($x, $xs) ==> $x);
         }
 
-        final private function unsafeTail(): ConsList<Tp, Tt>
+        final private function unsafeRest(): ConsList<Tp, Tt>
         {
             return $this->match(() ==> { throw new ConsListEmptyException(); }, ($x, $xs) ==> $xs);
         }
@@ -193,6 +180,8 @@ namespace Data
             return $this->reduceLeft(ConsList::nil(), ($x, $xs) ==> ConsList::lst($x, $xs));
         }
     }
+
+    type ConsListT<Tt> = ConsList<ConsListPrx, Tt>;
 
 }
 
