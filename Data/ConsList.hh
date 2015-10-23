@@ -22,7 +22,7 @@ namespace Data
 
     final class ConsList<Tp as ConsListPrx, +Tt> implements IMonad<Tp, Tt>
     {
-        final private function __construct(private Optional<Tuple2T<Tt, ConsList<Tp, Tt>>> $xs)
+        final private function __construct(private OptionalT<Tuple2T<Tt, ConsList<Tp, Tt>>> $xs)
         {
         }
         
@@ -61,11 +61,6 @@ namespace Data
             return $x;
         }
 
-        final public function singleton<Tv>(Tv $x): ConsList<Tp, Tv>
-        {
-            return ConsList::lst($x, ConsList::nil());
-        }
-
         final public function flatMap<Tv>((function (Tt): IMonad<Tp, Tv>) $f): ConsList<Tp, Tv>
         {
             return ConsList::flatten($this->fmap($x ==>
@@ -76,37 +71,42 @@ namespace Data
                     }));
         }
 
-        final public static function flatten(ConsList<Tp, ConsList<Tp, Tt>> $xs): ConsList<Tp, Tt>
+        final public function singleton<Tv>(Tv $x): ConsList<Tp, Tv>
         {
-            return $xs->reduce(ConsList::nil(), ($x, $xs) ==> ConsList::append($x, $xs));
+            return ConsList::lst($x, ConsList::nil());
         }
 
-        final public function fold<Tv>((function (Optional<Tuple2T<Tt, Tv>>): Tv) $f): Tv
+        final public static function flatten(ConsList<Tp, ConsList<Tp, Tt>> $xs): ConsList<Tp, Tt>
+        {
+            return $xs->reduceLeft(ConsList::nil(), ($x, $xs) ==> ConsList::append($x->reverse(), $xs))->reverse();
+        }
+
+        final public function fold<Tv>((function (OptionalT<Tuple2T<Tt, Tv>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> $lst->fold($f))));
         }
 
-        final public function lazyFold<Tv>((function (Optional<Tuple2T<Tt, Lazy<Tv>>>): Tv) $f): Tv
+        final public function lazyFold<Tv>((function (OptionalT<Tuple2T<Tt, LazyT<Tv>>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Lazy::delay(() ==> $lst->lazyFold($f)))));
         }
 
-        final public static function unfold<Tv>((function (Tv): Optional<Tuple2T<Tt, Tv>>) $f, Tv $x): ConsList<Tp, Tt>
+        final public static function unfold<Tv>((function (Tv): OptionalT<Tuple2T<Tt, Tv>>) $f, Tv $x): ConsList<Tp, Tt>
         {
             return new self($f($x)->fmap($pair ==> $pair->fmap($seed ==> ConsList::unfold($f, $seed))));
         }
 
-        final public function para<Tv>((function (Optional<Tuple2T<Tt, Tuple2T<Tv, ConsList<Tp, Tt>>>>): Tv) $f): Tv
+        final public function para<Tv>((function (OptionalT<Tuple2T<Tt, Tuple2T<Tv, ConsList<Tp, Tt>>>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Tuple2::make($lst->para($f), $lst))));
         }
 
-        final public function lazyPara<Tv>((function (Optional<Tuple2T<Tt, Tuple2T<Lazy<Tv>, ConsList<Tp, Tt>>>>): Tv) $f): Tv
+        final public function lazyPara<Tv>((function (OptionalT<Tuple2T<Tt, Tuple2T<LazyT<Tv>, ConsList<Tp, Tt>>>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Tuple2::make(Lazy::delay(() ==> $lst->lazyPara($f)), $lst))));
         }
 
-        final public static function apo<Tv>((function (Tv): Optional<Tuple2T<Tt, VariantT<Tv, ConsList<Tp, Tt>>>>) $f, Tv $x): ConsList<Tp, Tt>
+        final public static function apo<Tv>((function (Tv): OptionalT<Tuple2T<Tt, VariantT<Tv, ConsList<Tp, Tt>>>>) $f, Tv $x): ConsList<Tp, Tt>
         {
             return new self($f($x)->fmap($pair ==> $pair->fmap($next ==> $next->match($seed ==> ConsList::apo($f, $seed), $x ==> $x))));
         }
@@ -149,13 +149,13 @@ namespace Data
         }
 
         <<__Memoize>>
-        final public function first(): Optional<Tt>
+        final public function first(): OptionalT<Tt>
         {
             return $this->xs->fmap($x ==> $x->first());
         }
 
         <<__Memoize>>
-        final public function rest(): Optional<ConsList<Tp, Tt>>
+        final public function rest(): OptionalT<ConsList<Tp, Tt>>
         {
             return $this->xs->fmap($x ==> $x->second());
         }
@@ -172,7 +172,7 @@ namespace Data
 
         final public static function append(ConsList<Tp, Tt> $xs, ConsList<Tp, Tt> $ys): ConsList<Tp, Tt>
         {
-            return $xs->reduce($ys, ($x, $xs) ==> ConsList::lst($x, ConsList::append($xs, $ys)));
+            return $ys->reduceLeft($xs->reverse(), ($x, $xs) ==> ConsList::lst($x, $xs))->reverse();
         }
 
         <<__Memoize>>

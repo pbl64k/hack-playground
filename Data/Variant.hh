@@ -13,7 +13,7 @@ namespace Data
         }
     }
 
-    abstract class Variant<Tp, +Tt, +Tu> implements IMonad<Tp, Tu>, IBifunctor<Tp, Tt, Tu>
+    abstract class Variant<Tp as VariantPrx, +Tt, +Tu> implements IMonad<Tp, Tu>, IBifunctor<Tp, Tt, Tu>
     {
         final public static function left(Tt $x): Variant<Tp, Tt, Tu>
         {
@@ -79,7 +79,7 @@ namespace Data
         }
     }
 
-    final class Left<Tp, +Tt, +Tu> extends Variant<Tp, Tt, Tu>
+    final class Left<Tp as VariantPrx, +Tt, +Tu> extends Variant<Tp, Tt, Tu>
     {
         final private function __construct(private Tt $x)
         {
@@ -96,7 +96,7 @@ namespace Data
         }
     }
 
-    final class Right<Tp, +Tt, +Tu> extends Variant<Tp, Tt, Tu>
+    final class Right<Tp as VariantPrx, +Tt, +Tu> extends Variant<Tp, Tt, Tu>
     {
         final private function __construct(private Tu $x)
         {

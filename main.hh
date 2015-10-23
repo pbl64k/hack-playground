@@ -1,10 +1,11 @@
 <?hh // strict
 
+    require_once(__DIR__.'/Data/IMonad.hh');
     require_once(__DIR__.'/Data/Optional.hh');
     require_once(__DIR__.'/Data/Lazy.hh');
     require_once(__DIR__.'/Data/ConsList.hh');
 
-    function printOptional(\Data\Optional<int> $x): void
+    function printOptional(\Data\OptionalT<int> $x): void
     {
         print(
                 $x->match(
@@ -26,6 +27,11 @@
                 ->reduce(1, ($x, $y) ==> $x * $y);
     }
 
+    function flatMapSucc<Tp>(\Data\IMonad<Tp, int> $m): \Data\IMonad<Tp, int>
+    {
+        return $m->flatMap($x ==> $m->singleton($x + 1));
+    }
+
     function main(): void
     {
         $m1 = \Data\Optional::none();
@@ -35,8 +41,8 @@
 
         $succ = $x ==> $x + 1;
 
-        $m3 = $m1->fmap($succ);
-        $m4 = $m2->fmap($succ);
+        $m3 = $m1->asMonad($x ==> flatMapSucc($x));
+        $m4 = $m2->asMonad($x ==> flatMapSucc($x));
         $m7 = $m5->fmap($succ);
         $m8 = $m6->fmap($succ);
 
@@ -68,7 +74,8 @@
 
         print($xs->fold($x ==> $x->match(() ==> 0, $x ==> $x->match(($x, $y) ==> $x + $y)))."\n");
         print($xs->reduce(0, ($x, $y) ==> $x + $y)."\n");
-        print($xs->fmap($succ)->reduceLeft(1, ($x, $y) ==> $x * $y)."\n");
+
+        print($xs->asMonad($x ==> flatMapSucc($x))->reduceLeft(1, ($x, $y) ==> $x * $y)."\n");
 
         $xs->fmap($succ)->reverse()->fmap($x ==> { print($x."\n"); });
 
