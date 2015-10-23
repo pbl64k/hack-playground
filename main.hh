@@ -80,5 +80,8 @@
         $xs->fmap($succ)->reverse()->fmap($x ==> { print($x."\n"); });
 
         print(factorial(7)."\n");
+
+        $tst = \Data\ConsList::unfold($x ==> $x == 0 ? \Data\Optional::none() : \Data\Optional::some(\Data\Tuple2::make($x, $x - 1)), 200);
+        print($tst->reduceLeft(0, ($x, $y) ==> $x + $y)."\n");
     }
 

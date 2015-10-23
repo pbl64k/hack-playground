@@ -186,6 +186,16 @@ namespace Data
         {
             return $this->reduceLeft(ConsList::nil(), ($x, $xs) ==> ConsList::lst($x, $xs));
         }
+
+        final public function forall((function (Tt): bool) $p): bool
+        {
+            return $this->lazyFold($opt ==> $opt->match(() ==> true, $pair ==> $pair->match(($x, $y) ==> $p($x) && $y->force())));
+        }
+
+        final public function exists((function (Tt): bool) $p): bool
+        {
+            return !$this->forall($x ==> !$p($x));
+        }
     }
 
     type ConsListT<+Tt> = ConsList<ConsListPrx, Tt>;
