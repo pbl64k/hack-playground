@@ -42,8 +42,9 @@ namespace Data
             return $this->xs->match($ifEmpty, $x ==> $x->match($ifLst));
         }
 
-        final public static function fromFunctor(IFunctor<Tp, Tt> $x): ConsList<Tp, Tt>
+        final public function asFunctor<Tv>((function (IFunctor<Tp, Tt>): IFunctor<Tp, Tv>) $f): ConsList<Tp, Tv>
         {
+            $x = $f($this);
             invariant($x instanceof ConsList, 'unique proxy type');
             return $x;
         }
@@ -53,20 +54,26 @@ namespace Data
             return $this->reduceLeft(ConsList::nil(), ($x, $xs) ==> ConsList::lst($f($x), $xs))->reverse();
         }
 
-        final public static function fromMonad(IMonad<Tp, Tt> $x): ConsList<Tp, Tt>
+        final public function asMonad<Tv>((function (IMonad<Tp, Tt>): IMonad<Tp, Tv>) $f): ConsList<Tp, Tv>
         {
+            $x = $f($this);
             invariant($x instanceof ConsList, 'unique proxy type');
             return $x;
         }
 
-        final public static function pure(Tt $x): ConsList<Tp, Tt>
+        final public function singleton<Tv>(Tv $x): ConsList<Tp, Tv>
         {
             return ConsList::lst($x, ConsList::nil());
         }
 
         final public function flatMap<Tv>((function (Tt): IMonad<Tp, Tv>) $f): ConsList<Tp, Tv>
         {
-            return ConsList::flatten($this->fmap($x ==> ConsList::fromMonad($f($x))));
+            return ConsList::flatten($this->fmap($x ==>
+                    {
+                        $z = $f($x);
+                        invariant($z instanceof ConsList, 'unique proxy type');
+                        return $z;
+                    }));
         }
 
         final public static function flatten(ConsList<Tp, ConsList<Tp, Tt>> $xs): ConsList<Tp, Tt>

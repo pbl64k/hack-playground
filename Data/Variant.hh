@@ -27,8 +27,9 @@ namespace Data
 
         abstract public function match<Tv>((function (Tt): Tv) $ifLeft, (function (Tu): Tv) $ifRight): Tv;
 
-        final public static function fromFunctor<Tx>(IFunctor<Tp, Tu> $x): Variant<Tp, Tx, Tu>
+        final public function asFunctor<Tv>((function (IFunctor<Tp, Tu>): IFunctor<Tp, Tv>) $f): Variant<Tp, Tt, Tv>
         {
+            $x = $f($this);
             invariant($x instanceof Variant, 'unique proxy type');
             return $x;
         }
@@ -38,8 +39,9 @@ namespace Data
             return $this->bimap($x ==> $x, $f);
         }
 
-        final public static function fromBifunctor(IBifunctor<Tp, Tt, Tu> $x): Variant<Tp, Tt, Tu>
+        final public function asBifunctor<Tv, Tw>((function (IBifunctor<Tp, Tt, Tu>): IFunctor<Tv, Tw>) $f): Variant<Tp, Tv, Tw>
         {
+            $x = $f($this);
             invariant($x instanceof Variant, 'unique proxy type');
             return $x;
         }
@@ -49,20 +51,26 @@ namespace Data
             return $this->match($x ==> Variant::left($f($x)), $x ==> Variant::right($g($x)));
         }
 
-        final public static function fromMonad<Tx>(IMonad<Tp, Tu> $x): Variant<Tp, Tx, Tu>
+        final public function asMonad<Tv>((function (IMonad<Tp, Tu>): IMonad<Tp, Tv>) $f): Variant<Tp, Tt, Tv>
         {
+            $x = $f($this);
             invariant($x instanceof Variant, 'unique proxy type');
             return $x;
         }
 
-        final public static function pure(Tu $x): Variant<Tp, Tt, Tu>
-        {
-            return Variant::right($x);
-        }
-
         final public function flatMap<Tv>((function (Tu): IMonad<Tp, Tv>) $f): Variant<Tp, Tt, Tv>
         {
-            return $this->match($x ==> Variant::left($x), $x ==> Variant::fromMonad($f($x)));
+            return $this->match($x ==> Variant::left($x), $x ==>
+                    {
+                        $z = $f($x);
+                        invariant($z instanceof Variant, 'unique proxy type');
+                        return $z;
+                    });
+        }
+
+        final public function singleton<Tv>(Tv $x): Variant<Tp, Tt, Tv>
+        {
+            return Variant::right($x);
         }
 
         final public static function flatten(Variant<Tp, Tt, Variant<Tp, Tt, Tu>> $x): Variant<Tp, Tt, Tu>

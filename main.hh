@@ -26,16 +26,6 @@
                 ->reduce(1, ($x, $y) ==> $x * $y);
     }
 
-    function mkTestVariant(): \Data\VariantT<int, int>
-    {
-        return \Data\Variant::left(1);
-    }
-
-    function testVariant(\Data\IMonad<\Data\VariantPrx, int> $x): \Data\VariantT<\Data\Unit, int>
-    {
-        return \Data\Variant::fromMonad($x);
-    }
-
     function main(): void
     {
         $m1 = \Data\Optional::none();
@@ -83,7 +73,5 @@
         $xs->fmap($succ)->reverse()->fmap($x ==> { print($x."\n"); });
 
         print(factorial(7)."\n");
-
-        var_dump(testVariant(mkTestVariant())->match($x ==> $x->match(() ==> "Is this really a Unit?"), $x ==> "All is fine."));
     }
 

@@ -29,8 +29,9 @@ namespace Data
             return $f($this->first, $this->second);
         }
 
-        final public static function fromFunctor<Tx>(IFunctor<Tp, Tu> $x): Tuple2<Tp, Tx, Tu>
+        final public function asFunctor<Tv>((function (IFunctor<Tp, Tu>): IFunctor<Tp, Tv>) $f): Tuple2<Tp, Tt, Tv>
         {
+            $x = $f($this);
             invariant($x instanceof Tuple2, 'unique proxy type');
             return $x;
         }
@@ -40,8 +41,9 @@ namespace Data
             return $this->bimap($x ==> $x, $f);
         }
 
-        final public static function fromBifunctor(IBifunctor<Tp, Tt, Tu> $x): Tuple2<Tp, Tt, Tu>
+        final public function asBifunctor<Tv, Tw>((function (IBifunctor<Tp, Tt, Tu>): IFunctor<Tv, Tw>) $f): Tuple2<Tp, Tv, Tw>
         {
+            $x = $f($this);
             invariant($x instanceof Tuple2, 'unique proxy type');
             return $x;
         }
