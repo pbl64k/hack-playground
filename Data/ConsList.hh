@@ -22,7 +22,7 @@ namespace Data
 
     final class ConsList<Tp as ConsListPrx, +Tt> implements IMonad<Tp, Tt>
     {
-        final private function __construct(private Optional<Tuple2<Tt, ConsList<Tp, Tt>>> $xs)
+        final private function __construct(private Optional<Tuple2T<Tt, ConsList<Tp, Tt>>> $xs)
         {
         }
         
@@ -74,32 +74,32 @@ namespace Data
             return $xs->reduce(ConsList::nil(), ($x, $xs) ==> ConsList::append($x, $xs));
         }
 
-        final public function fold<Tv>((function (Optional<Tuple2<Tt, Tv>>): Tv) $f): Tv
+        final public function fold<Tv>((function (Optional<Tuple2T<Tt, Tv>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> $lst->fold($f))));
         }
 
-        final public function lazyFold<Tv>((function (Optional<Tuple2<Tt, Lazy<Tv>>>): Tv) $f): Tv
+        final public function lazyFold<Tv>((function (Optional<Tuple2T<Tt, Lazy<Tv>>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Lazy::delay(() ==> $lst->lazyFold($f)))));
         }
 
-        final public static function unfold<Tv>((function (Tv): Optional<Tuple2<Tt, Tv>>) $f, Tv $x): ConsList<Tp, Tt>
+        final public static function unfold<Tv>((function (Tv): Optional<Tuple2T<Tt, Tv>>) $f, Tv $x): ConsList<Tp, Tt>
         {
             return new self($f($x)->fmap($pair ==> $pair->fmap($seed ==> ConsList::unfold($f, $seed))));
         }
 
-        final public function para<Tv>((function (Optional<Tuple2<Tt, Tuple2<Tv, ConsList<Tp, Tt>>>>): Tv) $f): Tv
+        final public function para<Tv>((function (Optional<Tuple2T<Tt, Tuple2T<Tv, ConsList<Tp, Tt>>>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Tuple2::make($lst->para($f), $lst))));
         }
 
-        final public function lazyPara<Tv>((function (Optional<Tuple2<Tt, Tuple2<Lazy<Tv>, ConsList<Tp, Tt>>>>): Tv) $f): Tv
+        final public function lazyPara<Tv>((function (Optional<Tuple2T<Tt, Tuple2T<Lazy<Tv>, ConsList<Tp, Tt>>>>): Tv) $f): Tv
         {
             return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Tuple2::make(Lazy::delay(() ==> $lst->lazyPara($f)), $lst))));
         }
 
-        final public static function apo<Tv>((function (Tv): Optional<Tuple2<Tt, Variant<Tv, ConsList<Tp, Tt>>>>) $f, Tv $x): ConsList<Tp, Tt>
+        final public static function apo<Tv>((function (Tv): Optional<Tuple2T<Tt, VariantT<Tv, ConsList<Tp, Tt>>>>) $f, Tv $x): ConsList<Tp, Tt>
         {
             return new self($f($x)->fmap($pair ==> $pair->fmap($next ==> $next->match($seed ==> ConsList::apo($f, $seed), $x ==> $x))));
         }
@@ -181,7 +181,7 @@ namespace Data
         }
     }
 
-    type ConsListT<Tt> = ConsList<ConsListPrx, Tt>;
+    type ConsListT<+Tt> = ConsList<ConsListPrx, Tt>;
 
 }
 

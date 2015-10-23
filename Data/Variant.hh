@@ -3,53 +3,81 @@
 namespace Data
 {
 
-    abstract class Variant<Tt, +Tu>
+    require_once(__DIR__.'/IMonad.hh');
+    require_once(__DIR__.'/IBifunctor.hh');
+
+    final class VariantPrx
     {
-        final public static function left(Tt $x): Variant<Tt, Tu>
+        final private function __construct()
+        {
+        }
+    }
+
+    abstract class Variant<Tp, +Tt, +Tu> implements IMonad<Tp, Tu>, IBifunctor<Tp, Tt, Tu>
+    {
+        final public static function left(Tt $x): Variant<Tp, Tt, Tu>
         {
             return Left::make($x);
         }
 
-        final public static function right(Tu $x): Variant<Tt, Tu>
+        final public static function right(Tu $x): Variant<Tp, Tt, Tu>
         {
             return Right::make($x);
         }
 
         abstract public function match<Tv>((function (Tt): Tv) $ifLeft, (function (Tu): Tv) $ifRight): Tv;
 
-        final public function fmap<Tv>((function (Tu): Tv) $f): Variant<Tt, Tv>
+        final public static function fromFunctor<Tx>(IFunctor<Tp, Tu> $x): Variant<Tp, Tx, Tu>
+        {
+            invariant($x instanceof Variant, 'unique proxy type');
+            return $x;
+        }
+
+        final public function fmap<Tv>((function (Tu): Tv) $f): Variant<Tp, Tt, Tv>
         {
             return $this->bimap($x ==> $x, $f);
         }
 
-        final public function bimap<Tv, Tw>((function (Tt): Tv) $f, (function (Tu): Tw) $g): Variant<Tv, Tw>
+        final public static function fromBifunctor(IBifunctor<Tp, Tt, Tu> $x): Variant<Tp, Tt, Tu>
+        {
+            invariant($x instanceof Variant, 'unique proxy type');
+            return $x;
+        }
+
+        final public function bimap<Tv, Tw>((function (Tt): Tv) $f, (function (Tu): Tw) $g): Variant<Tp, Tv, Tw>
         {
             return $this->match($x ==> Variant::left($f($x)), $x ==> Variant::right($g($x)));
         }
 
-        final public static function pure(Tu $x): Variant<Tt, Tu>
+        final public static function fromMonad<Tx>(IMonad<Tp, Tu> $x): Variant<Tp, Tx, Tu>
+        {
+            invariant($x instanceof Variant, 'unique proxy type');
+            return $x;
+        }
+
+        final public static function pure(Tu $x): Variant<Tp, Tt, Tu>
         {
             return Variant::right($x);
         }
 
-        final public static function flatten(Variant<Tt, Variant<Tt, Tu>> $x): Variant<Tt, Tu>
+        final public function flatMap<Tv>((function (Tu): IMonad<Tp, Tv>) $f): Variant<Tp, Tt, Tv>
+        {
+            return $this->match($x ==> Variant::left($x), $x ==> Variant::fromMonad($f($x)));
+        }
+
+        final public static function flatten(Variant<Tp, Tt, Variant<Tp, Tt, Tu>> $x): Variant<Tp, Tt, Tu>
         {
             return $x->flatMap($x ==> $x);
         }
-
-        final public function flatMap<Tv>((function (Tu): Variant<Tt, Tv>) $f): Variant<Tt, Tv>
-        {
-            return $this->match($x ==> Variant::left($x), $f);
-        }
     }
 
-    final class Left<Tt, +Tu> extends Variant<Tt, Tu>
+    final class Left<Tp, +Tt, +Tu> extends Variant<Tp, Tt, Tu>
     {
         final private function __construct(private Tt $x)
         {
         }
 
-        final public static function make(Tt $x): Left<Tt, Tu>
+        final public static function make(Tt $x): Left<Tp, Tt, Tu>
         {
             return new self($x);
         }
@@ -60,13 +88,13 @@ namespace Data
         }
     }
 
-    final class Right<Tt, +Tu> extends Variant<Tt, Tu>
+    final class Right<Tp, +Tt, +Tu> extends Variant<Tp, Tt, Tu>
     {
         final private function __construct(private Tu $x)
         {
         }
 
-        final public static function make(Tu $x): Right<Tt, Tu>
+        final public static function make(Tu $x): Right<Tp, Tt, Tu>
         {
             return new self($x);
         }
@@ -76,6 +104,8 @@ namespace Data
             return $ifRight($this->x);
         }
     }
+
+    type VariantT<+Tt, +Tu> = Variant<VariantPrx, Tt, Tu>;
 
 }
 

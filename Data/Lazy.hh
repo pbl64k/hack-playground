@@ -7,7 +7,7 @@ namespace Data
 
     final class Lazy<+Tu>
     {
-        final private function __construct(private Variant<(function (): Tu), Tu> $x)
+        final private function __construct(private VariantT<(function (): Tu), Tu> $x)
         {
         }
 

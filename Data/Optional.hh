@@ -8,7 +8,7 @@ namespace Data
 
     final class Optional<+Tu>
     {
-        final private function __construct(private Variant<Unit, Tu> $x)
+        final private function __construct(private VariantT<Unit, Tu> $x)
         {
         }
 

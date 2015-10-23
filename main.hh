@@ -18,6 +18,14 @@
         $x->fmap($x ==> { print('Element: '.strval($x)."\n"); });
     }
 
+    function factorial(int $n): int
+    {
+        return \Data\ConsList::unfold(
+                $x ==> $x == 0 ? \Data\Optional::none() : \Data\Optional::some(\Data\Tuple2::make($x, $x - 1)),
+                $n)
+                ->reduce(1, ($x, $y) ==> $x * $y);
+    }
+
     function main(): void
     {
         $m1 = \Data\Optional::none();
@@ -63,5 +71,7 @@
         print($xs->fmap($succ)->reduceLeft(1, ($x, $y) ==> $x * $y)."\n");
 
         $xs->fmap($succ)->reverse()->fmap($x ==> { print($x."\n"); });
+
+        print(factorial(7)."\n");
     }
 
