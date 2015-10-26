@@ -4,6 +4,7 @@
     require_once(__DIR__.'/Data/Optional.hh');
     require_once(__DIR__.'/Data/Lazy.hh');
     require_once(__DIR__.'/Data/ConsList.hh');
+    require_once(__DIR__.'/Data/Stream.hh');
 
     function printOptional(\Data\OptionalT<int> $x): void
     {
@@ -83,5 +84,13 @@
 
         $tst = \Data\ConsList::unfold($x ==> $x == 0 ? \Data\Optional::none() : \Data\Optional::some(\Data\Tuple2::make($x, $x - 1)), 200);
         print($tst->reduceLeft(0, ($x, $y) ==> $x + $y)."\n");
+
+        $nats = \Data\Stream::unfold($x ==> \Data\Optional::some(\Data\Tuple2::make($x, $x + 1)), 1);
+        //$nats = \Data\Stream::stream(1, \Data\Lazy::delay(() ==> \Data\Stream::stream(2, \Data\Lazy::delay(() ==> \Data\Stream::nil()))));
+        //var_dump($nats);
+        //var_dump($nats->rest());
+        $nats->take(7)->lazyFold($x ==> $x->match(() ==> { print('End of stream.'."\n"); }, $pair ==> $pair->match(($x, $xs) ==> { print('Element: '.$x."\n"); $xs->force(); })));
+        //$nats->lazyFold($x ==> $x->match(() ==> { print('End of stream.'."\n"); }, $pair ==> $pair->match(($x, $xs) ==> { print('Element: '.$x."\n"); $xs->force(); })));
+        print($nats->take(7)->lazyFold($x ==> $x->match(() ==> 1, $pair ==> $pair->match(($x, $xs) ==> $x * $xs->force())))."\n");
     }
 
