@@ -97,7 +97,7 @@
                             : $xs->match(
                                 () ==> new Optional(null),
                                 // cf. take() above: $xs is of type Lazy<Stream<Tt>>, while a Stream<Tt> should be expected here
-                                ($x, $xs) ==> new Optional(new Tuple2($x, new Tuple2($n - 1, $xs))))),
+                                ($x, $xs) ==> new Optional(new Tuple2($x, new Lazy(() ==> false))))),
                     new Tuple2($n, $this));
         }
     }

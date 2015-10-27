@@ -212,6 +212,8 @@ namespace Data
                                 () ==> Optional::none(),
                                 //($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::delay(() ==> Tuple2::make($n - 1, $xs)))))),
                                 ($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::delay(() ==> Tuple2::make($n - 1, $xs->force())))))),
+                                // Even this is type checked successfully!
+                                //($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::promote(false))))),
                     Tuple2::make($n, $this));
         }
     }
