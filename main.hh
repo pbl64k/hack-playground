@@ -85,7 +85,7 @@
         $tst = \Data\ConsList::unfold($x ==> $x == 0 ? \Data\Optional::none() : \Data\Optional::some(\Data\Tuple2::make($x, $x - 1)), 200);
         print($tst->reduceLeft(0, ($x, $y) ==> $x + $y)."\n");
 
-        $nats = \Data\Stream::unfold($x ==> \Data\Optional::some(\Data\Tuple2::make($x, $x + 1)), 1);
+        $nats = \Data\Stream::unfold($x ==> \Data\Optional::some(\Data\Tuple2::make($x, \Data\Lazy::promote($x + 1))), 1);
         //$nats = \Data\Stream::stream(1, \Data\Lazy::delay(() ==> \Data\Stream::stream(2, \Data\Lazy::delay(() ==> \Data\Stream::nil()))));
         //var_dump($nats);
         //var_dump($nats->rest());

@@ -96,9 +96,9 @@ namespace Data
             return $f($this->xs->fmap($pair ==> $pair->fmap($lazy ==> $lazy->fmap($lst ==> $lst->lazyFold($f)))));
         }
 
-        final public static function unfold<Tv>((function (Tv): OptionalT<Tuple2T<Tt, Tv>>) $f, Tv $x): Stream<Tp, Tt>
+        final public static function unfold<Tv>((function (Tv): OptionalT<Tuple2T<Tt, LazyT<Tv>>>) $f, Tv $x): Stream<Tp, Tt>
         {
-            return new self($f($x)->fmap($pair ==> $pair->fmap($seed ==> Lazy::delay(() ==> Stream::unfold($f, $seed)))));
+            return new self($f($x)->fmap($pair ==> $pair->fmap($seed ==> $seed->fmap($z ==> Stream::unfold($f, $z)))));
         }
 
         //final public function para<Tv>((function (OptionalT<Tuple2T<Tt, Tuple2T<Tv, ConsList<Tp, Tt>>>>): Tv) $f): Tv
@@ -210,8 +210,8 @@ namespace Data
                             ? Optional::none()
                             : $xs->match(
                                 () ==> Optional::none(),
-                                ($x, $xs) ==> Optional::some(Tuple2::make($x, Tuple2::make($n - 1, $xs->force()))))),
-                                //($x, $xs) ==> Optional::some(Tuple2::make($x, Tuple2::make($n - 1, $xs))))),
+                                //($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::delay(() ==> Tuple2::make($n - 1, $xs)))))),
+                                ($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::delay(() ==> Tuple2::make($n - 1, $xs->force())))))),
                     Tuple2::make($n, $this));
         }
     }
