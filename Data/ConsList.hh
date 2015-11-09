@@ -130,6 +130,11 @@ namespace Data
             return $acc;
         }
 
+        final public function zip2<Tv>(ConsList<Tp, Tv> $ys): ConsList<Tp, Tuple2T<Tt, Tv>>
+        {
+            return $this->zipWith2($ys, ($x, $y) ==> Tuple2::make($x, $y));
+        }
+
         final public function zipWith2<Tv, Tw>(ConsList<Tp, Tv> $ys, (function (Tt, Tv): Tw) $f): ConsList<Tp, Tw>
         {
             return ConsList::unfold(
@@ -195,6 +200,18 @@ namespace Data
         final public function exists((function (Tt): bool) $p): bool
         {
             return !$this->forall($x ==> !$p($x));
+        }
+
+        final public function take(int $n): ConsList<Tp, Tt>
+        {
+            return ConsList::unfold($pair ==> $pair->match(
+                    ($n, $xs) ==>
+                        $n <= 0
+                            ? Optional::none()
+                            : $xs->match(
+                                () ==> Optional::none(),
+                                ($x, $xs) ==> Optional::some(Tuple2::make($x, Tuple2::make($n - 1, $xs))))),
+                    Tuple2::make($n, $this));
         }
     }
 

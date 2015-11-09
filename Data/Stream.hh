@@ -76,20 +76,10 @@ namespace Data
             return Stream::stream($x, Lazy::promote(Stream::nil()));
         }
 
-        final public static function lazyAppend(Stream<Tp, Tt> $xs, LazyT<Stream<Tp, Tt>> $ys): Stream<Tp, Tt>
-        {
-            return $xs->match(() ==> $ys->force(), ($x, $xs) ==> Stream::stream($x, Lazy::delay(() ==> Stream::lazyAppend($xs->force(), $ys))));
-        }
-
         final public static function flatten(Stream<Tp, Stream<Tp, Tt>> $xs): Stream<Tp, Tt>
         {
             return $xs->lazyFold($opt ==> $opt->match(() ==> Stream::nil(), $pair ==> $pair->match(($x, $xs) ==> Stream::lazyAppend($x, $xs))));
         }
-
-        //final public function fold<Tv>((function (OptionalT<Tuple2T<Tt, Tv>>): Tv) $f): Tv
-        //{
-        //    return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> $lst->fold($f))));
-        //}
 
         final public function lazyFold<Tv>((function (OptionalT<Tuple2T<Tt, LazyT<Tv>>>): Tv) $f): Tv
         {
@@ -101,51 +91,32 @@ namespace Data
             return new self($f($x)->fmap($pair ==> $pair->fmap($seed ==> $seed->fmap($z ==> Stream::unfold($f, $z)))));
         }
 
-        //final public function para<Tv>((function (OptionalT<Tuple2T<Tt, Tuple2T<Tv, ConsList<Tp, Tt>>>>): Tv) $f): Tv
-        //{
-        //    return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Tuple2::make($lst->para($f), $lst))));
-        //}
+        final public function lazyPara<Tv>((function (OptionalT<Tuple2T<Tt, LazyT<Tuple2T<Tv, Stream<Tp, Tt>>>>>): Tv) $f): Tv
+        {
+            return $f($this->xs->fmap($pair ==> $pair->fmap($lazy ==> $lazy->fmap($str ==> Tuple2::make($str->lazyPara($f), $str)))));
+        }
 
-        //final public function lazyPara<Tv>((function (OptionalT<Tuple2T<Tt, Tuple2T<LazyT<Tv>, ConsList<Tp, Tt>>>>): Tv) $f): Tv
-        //{
-        //    return $f($this->xs->fmap($pair ==> $pair->fmap($lst ==> Tuple2::make(Lazy::delay(() ==> $lst->lazyPara($f)), $lst))));
-        //}
+        final public static function apo<Tv>((function (Tv): OptionalT<Tuple2T<Tt, LazyT<VariantT<Tv, Stream<Tp, Tt>>>>>) $f, Tv $x): Stream<Tp, Tt>
+        {
+            return new self($f($x)->fmap($pair ==> $pair->fmap($lazy ==> $lazy->fmap($next ==> $next->match($seed ==> Stream::apo($f, $seed), $x ==> $x)))));
+        }
 
-        //final public static function apo<Tv>((function (Tv): OptionalT<Tuple2T<Tt, VariantT<Tv, ConsList<Tp, Tt>>>>) $f, Tv $x): ConsList<Tp, Tt>
-        //{
-        //    return new self($f($x)->fmap($pair ==> $pair->fmap($next ==> $next->match($seed ==> ConsList::apo($f, $seed), $x ==> $x))));
-        //}
+        final public function zip2<Tv>(Stream<Tp, Tv> $ys): Stream<Tp, Tuple2T<Tt, Tv>>
+        {
+            return $this->zipWith2($ys, ($x, $y) ==> Tuple2::make($x, $y));
+        }
 
-        //final public function reduce<Tv>(Tv $nil, (function(Tt, Tv): Tv) $lst): Tv
-        //{
-        //    return $this->fold($x ==> $x->match(() ==> $nil, $x ==> $x->match($lst)));
-        //}
-
-        //final public function reduceLeft<Tv>(Tv $init, (function(Tt, Tv): Tv) $comp): Tv
-        //{
-        //    $lst = $this;
-        //    $acc = $init;
-
-        //    while (! $lst->isEmpty())
-        //    {
-        //        $acc = $comp($lst->unsafeFirst(), $acc);
-        //        $lst = $lst->unsafeRest();
-        //    }
-
-        //    return $acc;
-        //}
-
-        //final public function zipWith2<Tv, Tw>(ConsList<Tp, Tv> $ys, (function (Tt, Tv): Tw) $f): ConsList<Tp, Tw>
-        //{
-        //    return ConsList::unfold(
-        //            $pair ==> $pair->match(
-        //                ($xs, $ys) ==> $xs->match(
-        //                    () ==> Optional::none(),
-        //                    ($x, $xs) ==> $ys->match(
-        //                        () ==> Optional::none(),
-        //                        ($y, $ys) ==> Optional::some(Tuple2::make($f($x, $y), Tuple2::make($xs, $ys)))))),
-        //            Tuple2::make($this, $ys));
-        //}
+        final public function zipWith2<Tv, Tw>(Stream<Tp, Tv> $ys, (function (Tt, Tv): Tw) $f): Stream<Tp, Tw>
+        {
+            return Stream::unfold(
+                    $pair ==> $pair->match(
+                        ($xs, $ys) ==> $xs->match(
+                            () ==> Optional::none(),
+                            ($x, $xs) ==> $ys->match(
+                                () ==> Optional::none(),
+                                ($y, $ys) ==> Optional::some(Tuple2::make($f($x, $y), Lazy::delay(() ==> Tuple2::make($xs->force(), $ys->force()))))))),
+                    Tuple2::make($this, $ys));
+        }
 
         <<__Memoize>>
         final public function isEmpty(): bool
@@ -165,42 +136,10 @@ namespace Data
             return $this->xs->fmap($x ==> $x->second()->force());
         }
 
-        //final private function unsafeFirst(): Tt
-        //{
-        //    return $this->match(() ==> { throw new ConsListEmptyException(); }, ($x, $xs) ==> $x);
-        //}
-
-        //final private function unsafeRest(): ConsList<Tp, Tt>
-        //{
-        //    return $this->match(() ==> { throw new ConsListEmptyException(); }, ($x, $xs) ==> $xs);
-        //}
-
-        //final public static function append(ConsList<Tp, Tt> $xs, ConsList<Tp, Tt> $ys): ConsList<Tp, Tt>
-        //{
-        //    return $ys->reduceLeft($xs->reverse(), ($x, $xs) ==> ConsList::lst($x, $xs))->reverse();
-        //}
-
-        //<<__Memoize>>
-        //final public function length(): int
-        //{
-        //    return $this->reduceLeft(0, ($x, $xs) ==> $xs + 1);
-        //}
-
-        //<<__Memoize>>
-        //final public function reverse(): ConsList<Tp, Tt>
-        //{
-        //    return $this->reduceLeft(ConsList::nil(), ($x, $xs) ==> ConsList::lst($x, $xs));
-        //}
-
-        //final public function forall((function (Tt): bool) $p): bool
-        //{
-        //    return $this->lazyFold($opt ==> $opt->match(() ==> true, $pair ==> $pair->match(($x, $y) ==> $p($x) && $y->force())));
-        //}
-
-        //final public function exists((function (Tt): bool) $p): bool
-        //{
-        //    return !$this->forall($x ==> !$p($x));
-        //}
+        final public static function lazyAppend(Stream<Tp, Tt> $xs, LazyT<Stream<Tp, Tt>> $ys): Stream<Tp, Tt>
+        {
+            return $xs->match(() ==> $ys->force(), ($x, $xs) ==> Stream::stream($x, Lazy::delay(() ==> Stream::lazyAppend($xs->force(), $ys))));
+        }
 
         final public function take(int $n): Stream<Tp, Tt>
         {
@@ -210,10 +149,7 @@ namespace Data
                             ? Optional::none()
                             : $xs->match(
                                 () ==> Optional::none(),
-                                //($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::delay(() ==> Tuple2::make($n - 1, $xs)))))),
                                 ($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::delay(() ==> Tuple2::make($n - 1, $xs->force())))))),
-                                // Even this is type checked successfully!
-                                //($x, $xs) ==> Optional::some(Tuple2::make($x, Lazy::promote(false))))),
                     Tuple2::make($n, $this));
         }
     }
